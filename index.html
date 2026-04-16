@@ -907,12 +907,27 @@ function initFirebase(config){
   }
 })();
 
+// Helper: convert JS object notation to JSON (Firebase gives JS format)
+function jsObjToJson(s){
+  return s.replace(/\/\/.*$/gm,'').replace(/,\s*([}\]])/g,'$1').replace(/([{,]\s*)([a-zA-Z_][a-zA-Z0-9_]*)\s*:/g,'$1"$2":');
+}
+
 function connectFirebase(){
   const raw = document.getElementById('s-fb-config').value.trim();
   const resultEl = document.getElementById('fbConnectResult');
   if(!raw){ resultEl.style.color='#e74c3c'; resultEl.textContent='Please paste your Firebase config.'; return; }
   let config;
-  try{ config = JSON.parse(raw); } catch(e){ resultEl.style.color='#e74c3c'; resultEl.textContent='Invalid JSON — make sure you copied the full config object.'; return; }
+  try{
+    config = JSON.parse(raw);
+  } catch(e){
+    try{
+      config = JSON.parse(jsObjToJson(raw));
+    } catch(e2){
+      resultEl.style.color='#e74c3c';
+      resultEl.textContent='Could not read config. Make sure you copied everything from the { opening brace to the } closing brace.';
+      return;
+    }
+  }
   if(!config.apiKey || !config.projectId){ resultEl.style.color='#e74c3c'; resultEl.textContent='Config is missing required fields. Copy the full firebaseConfig object.'; return; }
   const ok = initFirebase(config);
   if(ok){
